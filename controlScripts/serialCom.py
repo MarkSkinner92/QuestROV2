@@ -45,8 +45,7 @@ thread.start()
 
 # Receive and process messages
 while True:
-    # Maybe there's a ZMQ message to send to serial?
-    messages = yapper.getMessages("serial")
+    messages = yapper.waitForMessages("serial")
     for message in messages:
         print("sending out the serial port:",message)
         ser.write(message.encode())
