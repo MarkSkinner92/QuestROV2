@@ -1,15 +1,10 @@
 import RPi.GPIO as GPIO
 import time
-import zmq
 import sys
 import json
+from yap import yap
 
-context = zmq.Context()
-
-# Create a ZeroMQ subscriber
-subscriber = context.socket(zmq.SUB)
-subscriber.connect("tcp://127.0.0.1:5555")
-subscriber.setsockopt_string(zmq.SUBSCRIBE, "man/")
+yapper = yap.Yapper()
 
 state = 0
 cycle = 4
@@ -62,16 +57,17 @@ p.ChangeDutyCycle(0)
 #         time.sleep(0.2)
 
 while True:
-    stringData = subscriber.recv_string()
+    messages = yapper.waitForMessages('man')
 
-    data = stringData.split(' ',1)
-    message = data[0]
+    fullMessage = messages[len(messages)-1]
+    message = fullMessage[0]
+    data = fullMessage[1]
 
-    print(message,data[0])
+    print(message,data)
 
 
-    if(message == "man/moveCamera"):
-        value = float(data[1])
+    if(message == "moveCamera"):
+        value = float(data)
         
         if(value == 1):
             p.ChangeDutyCycle(camHighPulse)

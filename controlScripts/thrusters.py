@@ -135,21 +135,12 @@ def mixInputs(inputs):
 
     return output
 
+## THRUSTER LOGIC
 
-
-
-
-
-# # multiply our input vector by the transformation matrix, and keep each output in the bounds of [-1,1]
-# def computeThrustVector(inputVector):
-#     return []
-
-# thrustVector = np.array([0,0,0,0,0,0])
 inputs = {}
 cleanOutputs = {}
 
 while True:
-    print("waiting for yap messages")
     messages = yapper.waitForMessages('man')
 
     fullMessage = messages[len(messages)-1]

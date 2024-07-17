@@ -1,5 +1,5 @@
 import time
-import zmq
+from yap import yap
 import signal
 import time
 import json
@@ -8,6 +8,7 @@ import RPi.GPIO as GPIO
 import json
 import ms5837
 
+yapper = yap.Yapper()
 
 configJson = {}
 try:
@@ -19,17 +20,6 @@ except:
     sys.exit(1)
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-context = zmq.Context()
-
-# Create a ZeroMQ subscriber
-subscriber = context.socket(zmq.SUB)
-subscriber.connect("tcp://127.0.0.1:5555")
-subscriber.setsockopt_string(zmq.SUBSCRIBE, "")
-
-publisher = context.socket(zmq.PUB)
-publisher.connect("tcp://127.0.0.1:5556")
-
 
 wristState = "stop"
 clawState = "stop"
@@ -63,7 +53,7 @@ while True:
 	# print(pressureSensor.depth(),pressureSensor.altitude())
 	stringData = "Depth: "+str(round(pressureSensor.depth(), 2))+"m\nAltitude: " + str(round(pressureSensor.altitude(), 2))+"m"
 	print(stringData)
-	publisher.send_string("web/pressure " + stringData)
+	yapper.send("web",['pressure',stringData])
 	time.sleep(2)
 # data = pressureSensor.read(ms5837.OSR_256)
 # print(data)

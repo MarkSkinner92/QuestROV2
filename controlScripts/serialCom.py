@@ -35,7 +35,7 @@ def read_from_port(ser):
                 line = ser.readline().decode('utf-8')
                 # line = ser.readline()
                 print("Received:", line)
-                yapper.send("serial/out ",line)
+                yapper.send("serial/out",line)
             except:
                 print("error parsing")
 
@@ -49,5 +49,4 @@ while True:
     messages = yapper.getMessages("serial")
     for message in messages:
         print("sending out the serial port:",message)
-        # print(f"Sending {message} out the serial port")
-    # ser.write(data.encode())
+        ser.write(message.encode())

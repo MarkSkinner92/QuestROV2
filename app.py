@@ -52,59 +52,53 @@ def backgroundThread():
     global socketio
     while True:
 
-        # webMessages = yapper.getMessages('web')
-        # for message in webMessages:
-        #     print("sending webdata: topic = " + message.topic + "; message = " + message.data)
-        #     socketio.emit(message.topic, message.data)
+        webMessages = yapper.getMessages('web')
+        for message in webMessages:
+            print("sending webdata: topic = " + message[0] + "; message = " + message[1])
+            socketio.emit(message[0], message[1])
 
         
         serialMessages = yapper.getMessages('serial/out')
         for message in serialMessages:
-            print("got serial message",message)
+            # print("got serial message",message)
+            if(message[0] == "$"):
+                parts = message.split("=")
+                if(parts[0] == "$$SCREEN" and parts[1] == "3"):
+                    print("screen changed to",parts[1])
 
-        # if(protocol == 'serial'):
-        #     print("recieved serial data: " + message)
-        #     if(message[0] == "$"):
-        #         parts = message.split("=")
-        #         if(parts[0] == "$$SCREEN" and parts[1] == "3"):
-        #             print("screen changed to",parts[1])
+                    displayString = "ip: waiting"
+                    serialcmd = "$$screen=3=" + displayString.ljust(20) + "\r\n"
+                    yapper.send("serial",serialcmd)
 
-        #             displayString = "ip: waiting"
-        #             serialcmd = "$$screen=3=" + displayString.ljust(20) + "\r\n"
-        #             yapper.send("serial",serialcmd)
-
-        #             # address = str(subprocess.check_output(['hostname', '-I'])).split(' ')[0].replace("b'", "")
-        #             try:
-        #                 response = requests.get("http://host.docker.internal:9090/v1.0/ethernet")
-        #                 jdata = response.json()
-        #                 if(len(jdata) > 0):
-        #                     address = jdata[0]['addresses'][0]['ip']
-        #                     print(address)
-        #                 else:
-        #                     address = "no-devices"
-        #             except:
-        #                 address = "None Found"
+                    # address = str(subprocess.check_output(['hostname', '-I'])).split(' ')[0].replace("b'", "")
+                    try:
+                        response = requests.get("http://host.docker.internal:9090/v1.0/ethernet")
+                        jdata = response.json()
+                        if(len(jdata) > 0):
+                            address = jdata[0]['addresses'][0]['ip']
+                            print(address)
+                        else:
+                            address = "no-devices"
+                    except:
+                        address = "None Found"
                     
-        #             displayString = "ip: " + address
+                    displayString = "ip: " + address
 
-        #             serialcmd = "$$screen=3=" + displayString.ljust(20) + "\r\n"
-        #             yapper.send("serial",serialcmd)
+                    serialcmd = "$$screen=3=" + displayString.ljust(20) + "\r\n"
+                    yapper.send("serial",serialcmd)
                 
-        #         # TELEM parsing
-        #         # parts = voltage current volt mincell volt maxcell temp charging
-        #         elif(parts[0] == "$$TELEM"):
-        #             telemString = ""
-        #             telemString += "Voltage: " + parts[1] + '\n'
-        #             telemString += "Current: " + parts[2] + '\n'
-        #             telemString += "Mincell: " + parts[3] + '\n'
-        #             telemString += "Maxcell: " + parts[4] + '\n'
-        #             telemString += "Temperature: " + parts[5] + '\n'
-        #             telemString += "charging: " + parts[6].strip()
+                # TELEM parsing
+                # parts = voltage current volt mincell volt maxcell temp charging
+                elif(parts[0] == "$$TELEM"):
+                    telemString = ""
+                    telemString += "Voltage: " + parts[1] + '\n'
+                    telemString += "Current: " + parts[2] + '\n'
+                    telemString += "Mincell: " + parts[3] + '\n'
+                    telemString += "Maxcell: " + parts[4] + '\n'
+                    telemString += "Temperature: " + parts[5] + '\n'
+                    telemString += "charging: " + parts[6].strip()
 
-        #             print(telemString)
-        #             socketio.emit("telem", telemString)
-        #     # recieve screen 3
-        #     # send IP
+                    socketio.emit("telem", telemString)
 
 if __name__ == '__main__':
     threading.Thread(target=backgroundThread, daemon=True).start()

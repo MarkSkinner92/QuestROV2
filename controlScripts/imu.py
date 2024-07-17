@@ -1,17 +1,13 @@
 import time
-import zmq
+from yap import yap
 import json
 import math
 
-context = zmq.Context()
-
-publisher = context.socket(zmq.PUB)
-publisher.connect("tcp://127.0.0.1:5556")
+yapper = yap.Yapper()
 
 def sendJSON(topic,data):
-    stringToSend = topic + " " + json.dumps(data)
-    publisher.send_string(stringToSend)
-    print("sent IMU data: " + stringToSend)
+    yapper.send('web',[topic, json.dumps(data)])
+    print("sent IMU data")
 
 counter = 0
 while True:
@@ -20,6 +16,6 @@ while True:
         "roll" : 50*math.sin(counter/10),
         "heading" : 55
     }
-    sendJSON("web/imu",data)
+    sendJSON("imu",data)
     counter += 1
     time.sleep(1/20)
