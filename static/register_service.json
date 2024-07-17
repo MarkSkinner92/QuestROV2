@@ -1,0 +1,9 @@
+{
+    "name":"QuestROV",
+    "description":"Drives a non-ardupilot sub",
+    "icon":"mdi-clock-fast",
+    "company":"Quest",
+    "version":"1.0.0",
+    "webpage":"none",
+    "api":""
+ }

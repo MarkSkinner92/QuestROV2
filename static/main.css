@@ -1,0 +1,46 @@
+#attitude{
+    position: absolute;
+    top: 0px;
+    right: 0px;
+}
+
+#heading{
+    position: absolute;
+    top: 100px;
+    right: 0px;
+}
+
+#telem{
+    font-family: sans-serif;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    background: #ffffff4c;
+    margin: 0px;
+}
+
+#holderDiv{
+    background: #ffffff00;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+}
+
+body{
+    overflow:hidden;
+    margin:0px;
+}
+
+#leakText{
+    text-align: center;
+    margin-top: 200px;
+    display: none;
+}
+
+#focusBtn{
+    background-color: #fffa8e;
+    text-align: center;
+    width: 500px;
+    margin: 0 auto;
+    margin-top: 30px;
+}

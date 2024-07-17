@@ -1,0 +1,210 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <!-- when using the mode "code", it's important to specify charset utf-8 -->
+    <meta charset="utf-8">
+
+    <!-- TODO: replace with local files in submodule for offline use -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/10.0.3/jsoneditor.min.css" rel="stylesheet" type="text/css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/10.0.3/jsoneditor.min.js"></script>
+</head>
+<body>
+    <div id="toolbar" style="padding:10px">
+        <p>Version 3.9</p>
+        <button onclick="pullDefaultConfig()">Pull Factory Default</button>
+        <button onclick="mergeDefaultConfig()">Merge Factory Default w/ current</button>
+        <button onclick="pullConfigSettingsFromROV()">Pull from ROV</button>
+        <button onclick="uploadConfigSettings()">Save to ROV</button>
+        <p style="display:inline">Status: <span id="statusText">Pulled config settings from ROV</span></p>
+        <p id="gamepadInfo" style="display: inline; float: right; margin: 0px;">Plug in a gamepad to see axis and button IDs here</p>
+        <div class="thrusterButtons">
+            <p style="margin-bottom: 0px">Test Thrusters:</p>
+            <button id="rightFront" class="thrusterButton">rightFront</button>
+            <button id="rightMid" class="thrusterButton">rightMid</button>
+            <button id="rightRear" class="thrusterButton">rightRear</button>
+            <button id="leftFront" class="thrusterButton">leftFront</button>
+            <button id="leftMid" class="thrusterButton">leftMid</button>
+            <button id="leftRear" class="thrusterButton">leftRear</button>
+        </div>
+    </div>
+
+    <div id="jsoneditor" style="width: 100%; height: 80%;"></div>
+    <iframe id="systemdIframe" style="width: 100%; height: 400px; margin-top: 10px" src="http://192.168.1.99:9001"></iframe>
+
+    <script>
+
+        //Immediately update the Iframe with the correct hostname
+        let hostname = window.location.hostname;
+        document.getElementById("systemdIframe").src = `http://${hostname}:9001`;
+
+        let socket = io.connect('http://' + location.host);
+
+        // create the editor
+        const container = document.getElementById("jsoneditor")
+        const options = {}
+        const editor = new JSONEditor(container, options)
+        pullConfigSettingsFromROV();
+
+        function pullConfigSettingsFromROV(){
+            // Get config JSON and load it into the editor
+            const req = new XMLHttpRequest();
+
+            req.onload = (e) => {
+                try{
+                    let jsonInEditor = req.response;
+                    console.log("got this: ", jsonInEditor);
+                    console.log("If the above is not proper JSON, that will be an issue")
+                    editor.set(jsonInEditor);
+                    setStatusText("Done loading config.json")
+                }catch{
+                    setStatusText("Error parsing config.json. See console for details")
+                }
+            /* … */
+            };
+            req.open("GET", "/config_data");
+            req.responseType = "json";
+            req.send();
+            setStatusText("Pulling config.json from ROV...")
+        }
+
+        function uploadConfigSettings(){
+            var xhr = new XMLHttpRequest();
+
+            xhr.open("POST", "/config_data", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            var jsonData = editor.get();
+
+            var jsonString = JSON.stringify(jsonData);
+            console.log(jsonString);
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        setStatusText("Successfully updated config.json")
+                    } else {
+                        setStatusText("Request failed with status: " + xhr.status);
+                    }
+                }
+            };
+
+            xhr.send(jsonString);
+        }
+
+        function setStatusText(text){
+            document.getElementById("statusText").innerText = text;
+        }
+
+        function pullDefaultConfig(){
+            const req = new XMLHttpRequest();
+
+            req.onload = (e) => {
+                try{
+                    let jsonInEditor = req.response;
+                    console.log("got this: ", jsonInEditor);
+                    console.log("If the above is not proper JSON, that will be an issue")
+                    editor.set(jsonInEditor);
+                    setStatusText("Done loading defaultConfig.json")
+                }catch{
+                    setStatusText("Error parsing defaultConfig.json. See console for details")
+                }
+            /* … */
+            };
+            req.open("GET", "/default_config_data");
+            req.responseType = "json";
+            req.send();
+            setStatusText("Pulling defaultConfig.json from ROV...")
+        }
+        function mergeDefaultConfig(){
+            const req = new XMLHttpRequest();
+
+            req.onload = (e) => {
+                
+                    let factoryJSON = req.response;
+                    console.log("got this: ", factoryJSON);
+                    console.log("If the above is not proper JSON, that will be an issue")
+                    let previousJSONinEditor = editor.get();
+
+                    let o1 = factoryJSON;
+                    let o2 = previousJSONinEditor;
+
+                    var merged = Object.assign({}, o1, o2);
+                    Object.keys(o2).forEach(key => {
+                        if (o2[key] instanceof Object) {
+                            merged[key] = Object.assign({}, o1[key], o2[key]);
+                        } else {
+                            merged[key] = o2[key];
+                        }
+                    });
+
+
+                    editor.set(merged);
+                    setStatusText("Done merging")
+                
+            /* … */
+            };
+            req.open("GET", "/default_config_data");
+            req.responseType = "json";
+            req.send();
+            setStatusText("Merging defaultConfig.json from ROV...")
+        }
+
+
+        //Gamepad info
+
+        function checkGamepadState() {
+            var gamepad = navigator.getGamepads()[0];
+            console.log(gamepad);
+            if (gamepad) {
+                if(!gamepad?.buttonsState) gamepad.buttonsState = new Array(gamepad.buttons.length).fill(false);
+                if(!gamepad?.axesState) gamepad.axesState = new Array(gamepad.axes.length).fill(0);
+
+                for (var j = 0; j < gamepad.buttons.length; j++) {
+                    if (gamepad.buttons[j].pressed !== gamepad.buttonsState[j]) {
+                        document.getElementById('gamepadInfo').innerText = ("Button " + j);
+                        gamepad.buttonsState[j] = gamepad.buttons[j].pressed;
+                    }
+                }
+
+                for (var j = 0; j < gamepad.axes.length; j++) {
+                    if (Math.abs(gamepad.axes[j] - gamepad.axesState[j]) > 0.1) {
+                        document.getElementById('gamepadInfo').innerText = ("axes " + j + " " + (gamepad.axes[j] > 0 ? "+" : "-"));
+                        gamepad.axesState[j] = gamepad.axes[j];
+                    }
+                }
+            }
+        }
+
+        // Initialize the gamepad state
+        window.addEventListener("gamepadconnected", function(e) {
+            window.gamepadInterval = setInterval(checkGamepadState, 100);
+        });
+
+        window.addEventListener("gamepaddisconnected", function(e) {
+            clearInterval(window.gamepadInterval);
+        });
+
+        // Thruster buttons
+
+        let buttonElements = document.querySelectorAll('.thrusterButton');
+
+        for(let i = 0; i < buttonElements.length; i++){
+            let button = buttonElements[i];
+            console.log(button);
+            button.addEventListener('mousedown',(e)=>{
+                let id = e.target.id;
+                console.log("down",id)
+                socket.emit("man","test_"+id,5)
+            });
+            button.addEventListener('mouseup',(e)=>{
+                let id = e.target.id;
+                console.log("up",id)
+                socket.emit("man","test_"+id,0)
+            });
+        }
+
+
+    </script>
+</body>
+</html>
